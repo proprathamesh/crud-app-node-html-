@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student CRUD App</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-top: 50px;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+        }
+        h1 {
+            color: #333;
+        }
+        .form-container {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        }
+        .student-list {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center">Student Management</h1>
+        <div class="form-container">
+            <form id="studentForm">
+                <div class="mb-3">
+                    <label for="name" class="form-label">Name</label>
+                    <input type="text" class="form-control" id="name" required>
+                </div>
+                <div class="mb-3">
+                    <label for="rollno" class="form-label">Roll No</label>
+                    <input type="text" class="form-control" id="rollno" required>
+                </div>
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" class="form-control" id="email" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Add Student</button>
+            </form>
+        </div>
+
+        <div class="student-list mt-4">
+            <h2 class="text-center">Student List</h2>
+            <ul id="studentList" class="list-group"></ul>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('studentForm');
+        const studentList = document.getElementById('studentList');
+        const DefaultUrl = 'http://localhost:4000/students'
+
+        async function fetchStudents() {
+            const response = await fetch(`${DefaultUrl}`);
+            const students = await response.json();
+            renderStudents(students);
+        }
+
+        function renderStudents(students) {
+            studentList.innerHTML = '';
+            students.forEach(student => {
+                const li = document.createElement('li');
+                li.className = 'list-group-item d-flex justify-content-between align-items-center';
+                li.innerHTML = `
+                    <span><strong>${student.name}</strong> | Age: ${student.rollno} | Email: ${student.email}</span>
+                    <span>
+                        <button class="btn btn-sm btn-warning" onclick="editStudent('${student._id}')">Edit</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteStudent('${student._id}')">Delete</button>
+                    </span>
+                `;
+                studentList.appendChild(li);
+            });
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            const age = document.getElementById('rollno').value;
+            const email = document.getElementById('email').value;
+            await fetch(`${DefaultUrl}/students`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, rollno, email })
+            });
+            form.reset();
+            fetchStudents();
+        });
+
+        async function deleteStudent(id) {
+            await fetch(`${DefaultUrl}/students/${id}`, { method: 'DELETE' });
+            fetchStudents();
+        }
+
+        async function editStudent(id) {
+            const student = await fetch(`${DefaultUrl}/students/${id}`).then(res => res.json());
+            document.getElementById('name').value = student.name;
+            document.getElementById('rollno').value = student.rollno;
+            document.getElementById('email').value = student.email;
+
+            form.onsubmit = async (e) => {
+                e.preventDefault();
+                await fetch(`${DefaultUrl}/students/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: document.getElementById('name').value,
+                        rollno: document.getElementById('rollno').value,
+                        email: document.getElementById('email').value
+                    })
+                });
+                form.reset();
+                form.onsubmit = createStudent;
+                fetchStudents();
+            };
+        }
+
+        async function createStudent(e) {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            const age = document.getElementById('rollno').value;
+            const email = document.getElementById('email').value;
+            await fetch(`${DefaultUrl}/students`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, rollno, email })
+            });
+            form.reset();
+            fetchStudents();
+        }
+
+        fetchStudents();
+    </script>
+</body>
+</html>
